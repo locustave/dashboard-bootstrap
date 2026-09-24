@@ -1,0 +1,574 @@
+title: Dashboard Bootstrap
+source: BUILD_MANIFEST.yaml
+planning_scope: keel-generation-bootstrap
+phases:
+
+- phase: 0
+  name: Controlled Execution Harness Bootstrap
+  goal: Generate docs/TDD.md from the PRD, confirm the tech stack, produce the full build manifest, and generate phase build prompts — without implementing product code.
+  inputs:
+    - docs/PRD.md
+    - docs/phases/phase_0.prompt.md
+  outputs:
+    - docs/TDD.md
+    - BUILD_MANIFEST.yaml
+    - docs/phases/phase_N.md (one per manifest phase)
+  tasks:
+    - Generate docs/TDD.md from docs/PRD.md using the tdd-builder procedure.
+    - Confirm the tech stack and write it to agent-rules.md.
+    - Generate the full product build manifest from docs/PRD.md and docs/TDD.md.
+    - Generate one docs/phases/phase_N.md file per manifest phase.
+    - Run harness-only verification.
+    - Write audit, ledger, run-log, and gate records.
+  exit_criteria:
+    - bash keel/hooks/preflight.sh exits 0.
+    - python3 keel/scripts/verify_repo.py . exits 0.
+    - bash scripts/verify_phase0.sh exits 0.
+  out_of_scope:
+    - Product backend, web, runtime, database, compose, worker, MCP, UI, dependency install, product build, and product test files.
+
+- phase: 1
+  id: phase-001
+  name: Monorepo Foundation
+  dependency_layer: 0
+  risk_score: 1
+  rollback_checkpoint_required: true
+  deliverables:
+    - monorepo-foundation
+  allowed_files:
+    - package.json
+    - pnpm-workspace.yaml
+    - pnpm-lock.yaml
+    - turbo.json
+    - tsconfig.base.json
+    - .npmrc
+    - .gitignore
+    - packages/design-system/package.json
+    - packages/design-system/tsconfig.json
+    - packages/design-system/src/index.ts
+    - packages/templates/package.json
+    - packages/templates/tsconfig.json
+    - packages/templates/src/index.ts
+    - packages/schema/package.json
+    - packages/schema/tsconfig.json
+    - packages/schema/src/index.ts
+    - packages/generator/package.json
+    - packages/generator/tsconfig.json
+    - packages/generator/src/index.ts
+    - packages/cli/package.json
+    - packages/cli/tsconfig.json
+    - packages/cli/src/index.ts
+  blocked_files: []
+  goal: Set up pnpm workspace, Turborepo pipeline, root package.json, shared tsconfig, and empty package scaffolds for all five packages (design-system, templates, schema, generator, cli).
+  tasks:
+    - Create root package.json with pnpm workspace configuration and shared dev dependencies (TypeScript).
+    - Create pnpm-workspace.yaml defining packages/* and examples/* workspaces.
+    - Create turbo.json with build, test, and lint pipelines.
+    - Create tsconfig.base.json with shared TypeScript settings (ES2022, strict).
+    - Scaffold package.json for each of the five packages with correct workspace dependency DAG.
+    - Create minimal tsconfig.json extending the base in each package.
+    - Create minimal src/index.ts placeholder in each package.
+    - Run pnpm install and pnpm build.
+  exit_criteria:
+    - pnpm install exits 0.
+    - pnpm build exits 0.
+  out_of_scope:
+    - Deliverables belonging to other phases.
+
+- phase: 2
+  id: phase-002
+  name: Schema Package
+  dependency_layer: 1
+  isolation_reason: schema
+  risk_score: 5
+  rollback_checkpoint_required: true
+  deliverables:
+    - schema-package
+  allowed_files:
+    - packages/schema/package.json
+    - packages/schema/tsconfig.json
+    - packages/schema/vitest.config.ts
+    - packages/schema/src/schema.ts
+    - packages/schema/src/types.ts
+    - packages/schema/src/vocabulary.ts
+    - packages/schema/src/validate.ts
+    - packages/schema/src/index.ts
+    - packages/schema/src/__tests__/
+    - pnpm-lock.yaml
+  blocked_files: []
+  goal: Implement the manifest JSON Schema (v1), TypeScript types, vocabulary exports (TemplateName, IconName, TEMPLATE_NAMES, ICON_NAMES, CAPABILITIES), and validateManifest() function with structural, semantic, and cross-reference validation.
+  tasks:
+    - Add required dependencies (JSON Schema validator, YAML parser) to packages/schema/package.json.
+    - Define TemplateName and IconName types and runtime arrays in vocabulary.ts.
+    - Define DashboardManifest, PageDefinition, NavigationItem, PageCapabilities types in types.ts.
+    - Define the JSON Schema (draft 2020-12) for manifest v1 in schema.ts.
+    - Implement validateManifest() with structural, semantic, and cross-reference validation in validate.ts.
+    - Export all public API from index.ts.
+    - Write unit tests for validation edge cases.
+  exit_criteria:
+    - pnpm --filter @dashboard-bootstrap/schema test exits 0.
+    - pnpm --filter @dashboard-bootstrap/schema build exits 0.
+  out_of_scope:
+    - Deliverables belonging to other phases.
+
+- phase: 3
+  id: phase-003
+  name: Design System Foundation
+  dependency_layer: 1
+  risk_score: 1
+  rollback_checkpoint_required: true
+  deliverables:
+    - design-system-foundation
+  read_only_inputs:
+    - docs/DESIGN_SYSTEM.md
+  allowed_files:
+    - packages/design-system/package.json
+    - packages/design-system/tsconfig.json
+    - packages/design-system/vitest.config.ts
+    - packages/design-system/src/tokens.ts
+    - packages/design-system/src/theme.ts
+    - packages/design-system/src/theme/DashboardThemeProvider.tsx
+    - packages/design-system/src/index.ts
+    - packages/design-system/src/__tests__/
+    - pnpm-lock.yaml
+  blocked_files:
+    - docs/DESIGN_SYSTEM.md
+  goal: Implement the approved docs/DESIGN_SYSTEM.md contract as executable code — design tokens, MUI theme configuration, and DashboardThemeProvider component. Do not rewrite or reinterpret DESIGN_SYSTEM.md.
+  tasks:
+    - Read docs/DESIGN_SYSTEM.md as the authoritative visual contract.
+    - Add React, MUI, and related peer/dev dependencies to packages/design-system/package.json.
+    - Implement design tokens in tokens.ts matching the values specified in DESIGN_SYSTEM.md.
+    - Implement MUI theme configuration in theme.ts applying design tokens from DESIGN_SYSTEM.md.
+    - Implement DashboardThemeProvider component wrapping MUI ThemeProvider.
+    - Export DashboardThemeProvider and tokens from index.ts.
+    - Write unit tests verifying theme provider renders and token values match DESIGN_SYSTEM.md.
+  exit_criteria:
+    - pnpm --filter @dashboard-bootstrap/design-system test exits 0.
+    - pnpm --filter @dashboard-bootstrap/design-system build exits 0.
+  out_of_scope:
+    - Modifying docs/DESIGN_SYSTEM.md.
+    - Semantic components (Phases 4-6).
+    - Page templates.
+    - Deliverables belonging to other phases.
+
+- phase: 4
+  id: phase-004
+  name: Shell, Navigation, and Page Structure Components
+  dependency_layer: 2
+  risk_score: 1
+  rollback_checkpoint_required: true
+  deliverables:
+    - design-system-components-shell
+  allowed_files:
+    - packages/design-system/package.json
+    - packages/design-system/src/components/AppShell.tsx
+    - packages/design-system/src/components/Sidebar.tsx
+    - packages/design-system/src/components/TopNav.tsx
+    - packages/design-system/src/components/Page.tsx
+    - packages/design-system/src/components/PageHeader.tsx
+    - packages/design-system/src/components/PrimaryAction.tsx
+    - packages/design-system/src/index.ts
+    - packages/design-system/src/__tests__/
+    - pnpm-lock.yaml
+  blocked_files:
+    - docs/DESIGN_SYSTEM.md
+  goal: Implement shell and page structure components — AppShell, Sidebar, TopNav, Page, PageHeader, PrimaryAction — conforming to the approved design contract.
+  tasks:
+    - Implement AppShell (application layout with sidebar and content area).
+    - Implement Sidebar (navigation sidebar accepting navigation items).
+    - Implement TopNav (top navigation bar).
+    - Implement Page (page container with standard padding/layout).
+    - Implement PageHeader (title, subtitle, breadcrumbs, action slot).
+    - Implement PrimaryAction (standard primary action button).
+    - Update index.ts with new component exports.
+    - Write unit tests for component rendering and prop variations.
+  exit_criteria:
+    - pnpm --filter @dashboard-bootstrap/design-system test exits 0.
+    - pnpm --filter @dashboard-bootstrap/design-system build exits 0.
+  out_of_scope:
+    - Data, content, and interaction components (Phase 5).
+    - Form, state, and icon components (Phase 6).
+    - Deliverables belonging to other phases.
+
+- phase: 5
+  id: phase-005
+  name: Data, Content, and Interaction Components
+  dependency_layer: 2
+  risk_score: 1
+  rollback_checkpoint_required: true
+  deliverables:
+    - design-system-components-data
+  allowed_files:
+    - packages/design-system/package.json
+    - packages/design-system/src/components/AppDataTable.tsx
+    - packages/design-system/src/components/AppCard.tsx
+    - packages/design-system/src/components/MetricCard.tsx
+    - packages/design-system/src/components/StatusBadge.tsx
+    - packages/design-system/src/components/FilterBar.tsx
+    - packages/design-system/src/components/SearchInput.tsx
+    - packages/design-system/src/components/AppDrawer.tsx
+    - packages/design-system/src/components/AppDialog.tsx
+    - packages/design-system/src/index.ts
+    - packages/design-system/src/__tests__/
+    - pnpm-lock.yaml
+  blocked_files:
+    - docs/DESIGN_SYSTEM.md
+  goal: Implement data, content, and interaction components — AppDataTable, AppCard, MetricCard, StatusBadge, FilterBar, SearchInput, AppDrawer, AppDialog — conforming to the approved design contract.
+  tasks:
+    - Implement AppDataTable (data table with sorting).
+    - Implement AppCard (content card).
+    - Implement MetricCard (metric display card).
+    - Implement StatusBadge (status indicator).
+    - Implement FilterBar (filter controls).
+    - Implement SearchInput (search field).
+    - Implement AppDrawer (slide-out drawer).
+    - Implement AppDialog (modal dialog).
+    - Update index.ts with new component exports.
+    - Write unit tests for component rendering and prop variations.
+  exit_criteria:
+    - pnpm --filter @dashboard-bootstrap/design-system test exits 0.
+    - pnpm --filter @dashboard-bootstrap/design-system build exits 0.
+  out_of_scope:
+    - Form, state, and icon components (Phase 6).
+    - Deliverables belonging to other phases.
+
+- phase: 6
+  id: phase-006
+  name: Forms, States, and Icon Abstraction
+  dependency_layer: 2
+  risk_score: 1
+  rollback_checkpoint_required: true
+  deliverables:
+    - design-system-components-forms-states-icon
+  allowed_files:
+    - packages/design-system/package.json
+    - packages/design-system/src/components/AppForm.tsx
+    - packages/design-system/src/components/FormField.tsx
+    - packages/design-system/src/components/EmptyState.tsx
+    - packages/design-system/src/components/LoadingState.tsx
+    - packages/design-system/src/components/ErrorState.tsx
+    - packages/design-system/src/components/Icon.tsx
+    - packages/design-system/src/index.ts
+    - packages/design-system/src/__tests__/
+    - pnpm-lock.yaml
+  blocked_files:
+    - docs/DESIGN_SYSTEM.md
+  goal: Implement form components (AppForm, FormField), state components (EmptyState, LoadingState, ErrorState), and the Icon component abstracting Lucide React.
+  tasks:
+    - Implement AppForm (form container).
+    - Implement FormField (labeled form field).
+    - Implement EmptyState (empty/no-data display).
+    - Implement LoadingState (loading indicator).
+    - Implement ErrorState (error display).
+    - Implement Icon component abstracting Lucide React, supporting all IconName values from schema vocabulary.
+    - Add lucide-react as a dependency in package.json.
+    - Update index.ts with new component exports.
+    - Write unit tests for component rendering and prop variations.
+  exit_criteria:
+    - pnpm --filter @dashboard-bootstrap/design-system test exits 0.
+    - pnpm --filter @dashboard-bootstrap/design-system build exits 0.
+  out_of_scope:
+    - Page templates (Phase 7).
+    - Deliverables belonging to other phases.
+
+- phase: 7
+  id: phase-007
+  name: Page Templates
+  dependency_layer: 3
+  risk_score: 1
+  rollback_checkpoint_required: true
+  deliverables:
+    - page-templates
+  allowed_files:
+    - packages/templates/package.json
+    - packages/templates/tsconfig.json
+    - packages/templates/vitest.config.ts
+    - packages/templates/src/DashboardTemplate.tsx
+    - packages/templates/src/TableTemplate.tsx
+    - packages/templates/src/DetailTemplate.tsx
+    - packages/templates/src/SettingsTemplate.tsx
+    - packages/templates/src/WizardTemplate.tsx
+    - packages/templates/src/CatalogTemplate.tsx
+    - packages/templates/src/BuilderTemplate.tsx
+    - packages/templates/src/SplitViewTemplate.tsx
+    - packages/templates/src/EmptyStateTemplate.tsx
+    - packages/templates/src/index.ts
+    - packages/templates/src/__tests__/
+    - pnpm-lock.yaml
+  blocked_files: []
+  goal: Implement page-level template components with strongly typed props, composing design-system components.
+  tasks:
+    - Add @dashboard-bootstrap/design-system as a workspace dependency.
+    - Implement DashboardTemplate (metrics, activity, summaries).
+    - Implement TableTemplate (searchable/filterable collections).
+    - Implement DetailTemplate (individual domain object).
+    - Implement SettingsTemplate (configuration).
+    - Implement WizardTemplate (multi-step flows).
+    - Implement CatalogTemplate (browse objects/tools/integrations).
+    - Implement BuilderTemplate (workflow/configuration builders).
+    - Implement SplitViewTemplate (collection + contextual detail).
+    - Implement EmptyStateTemplate (onboarding/no-data).
+    - Export all templates from index.ts.
+    - Write unit tests for template rendering with fixture data.
+  exit_criteria:
+    - pnpm --filter @dashboard-bootstrap/templates test exits 0.
+    - pnpm --filter @dashboard-bootstrap/templates build exits 0.
+  out_of_scope:
+    - Deliverables belonging to other phases.
+
+- phase: 8
+  id: phase-008
+  name: Generator Package
+  dependency_layer: 2
+  isolation_reason: generated-code
+  risk_score: 3
+  rollback_checkpoint_required: true
+  deliverables:
+    - generator-package
+  allowed_files:
+    - packages/generator/package.json
+    - packages/generator/tsconfig.json
+    - packages/generator/vitest.config.ts
+    - packages/generator/src/generate.ts
+    - packages/generator/src/add-page.ts
+    - packages/generator/src/state.ts
+    - packages/generator/src/types.ts
+    - packages/generator/src/templates/
+    - packages/generator/src/index.ts
+    - packages/generator/src/__tests__/
+    - pnpm-lock.yaml
+  blocked_files: []
+  goal: Implement the deterministic code generator that reads a validated manifest, emits project files, and manages .dashboard-bootstrap/state.json for ownership tracking with drift detection and idempotent regeneration.
+  tasks:
+    - Add required dependencies (filesystem, template, YAML libraries) to package.json.
+    - Implement GenerateOptions, GenerateResult, and GeneratorState types.
+    - Implement state.ts for reading/writing .dashboard-bootstrap/state.json.
+    - Implement code generation templates for routes, navigation, and dashboard config.
+    - Implement generate() with validate, plan, write system-generated, write scaffold, update state, report.
+    - Implement addPage() with manifest-first flow.
+    - Implement drift detection (hash mismatch warning + overwrite).
+    - Implement scaffold protection (never overwrite existing scaffold files).
+    - Implement filesystem containment (all writes inside resolved project output root).
+    - Export public API from index.ts.
+    - Write unit and integration tests (idempotent generation, drift detection, scaffold protection, application file isolation).
+  exit_criteria:
+    - pnpm --filter @dashboard-bootstrap/generator test exits 0.
+    - pnpm --filter @dashboard-bootstrap/generator build exits 0.
+  out_of_scope:
+    - CLI command parsing.
+    - Deliverables belonging to other phases.
+
+- phase: 9
+  id: phase-009
+  name: CLI Package
+  dependency_layer: 3
+  risk_score: 2
+  rollback_checkpoint_required: true
+  deliverables:
+    - cli-package
+  allowed_files:
+    - packages/cli/package.json
+    - packages/cli/tsconfig.json
+    - packages/cli/vitest.config.ts
+    - packages/cli/bin/dashboard-bootstrap.ts
+    - packages/cli/src/index.ts
+    - packages/cli/src/commands/init.ts
+    - packages/cli/src/commands/validate.ts
+    - packages/cli/src/commands/generate.ts
+    - packages/cli/src/commands/add-page.ts
+    - packages/cli/src/commands/doctor.ts
+    - packages/cli/src/__tests__/
+    - pnpm-lock.yaml
+  blocked_files: []
+  goal: Implement the standalone CLI entry point exposing init, validate, generate, add-page, and doctor commands. Executable via npx.
+  tasks:
+    - Add required dependencies (CLI framework if needed) to package.json.
+    - Implement command dispatcher in index.ts.
+    - Implement init command (scaffold new project with empty manifest).
+    - Implement validate command (exit 0 valid, exit 1 invalid).
+    - Implement generate command (validate + generate, exit 0/1/2).
+    - Implement add-page command (add page to manifest + regenerate).
+    - Implement doctor command (check environment, exit 0/3).
+    - Create bin/dashboard-bootstrap.ts entry point.
+    - Configure package.json bin field for npx execution.
+    - Write unit tests mocking schema and generator.
+  exit_criteria:
+    - pnpm --filter @dashboard-bootstrap/cli test exits 0.
+    - pnpm --filter @dashboard-bootstrap/cli build exits 0.
+  out_of_scope:
+    - Deliverables belonging to other phases.
+
+- phase: 10
+  id: phase-010
+  name: Reference Application
+  dependency_layer: 4
+  risk_score: 2
+  rollback_checkpoint_required: true
+  deliverables:
+    - reference-app
+  allowed_files:
+    - examples/reference-app/package.json
+    - examples/reference-app/tsconfig.json
+    - examples/reference-app/vite.config.ts
+    - examples/reference-app/index.html
+    - examples/reference-app/src/
+    - examples/manifests/
+    - pnpm-lock.yaml
+  blocked_files: []
+  goal: Build the reference application demonstrating all page patterns with fixture data. Serves as visual regression baseline and integration test surface.
+  tasks:
+    - Create examples/reference-app Vite project with design-system and templates workspace dependencies.
+    - Implement App.tsx with DashboardThemeProvider, AppShell, routing, and navigation.
+    - Implement representative pages for each template type with fixture data.
+    - Create fixture data modules in src/fixtures/.
+    - Create example dashboard.yaml manifests in examples/manifests/.
+    - Verify the reference app builds.
+  exit_criteria:
+    - pnpm --filter reference-app build exits 0.
+  out_of_scope:
+    - AI skill (Phase 11).
+    - Deliverables belonging to other phases.
+
+- phase: 11
+  id: phase-011
+  name: AI Bootstrap Skill
+  dependency_layer: 4
+  risk_score: 1
+  rollback_checkpoint_required: true
+  deliverables:
+    - ai-bootstrap-skill
+  allowed_files:
+    - skills/dashboard-bootstrap/SKILL.md
+    - skills/dashboard-bootstrap/examples/
+  blocked_files: []
+  goal: Create the AI bootstrap skill with SKILL.md, examples, and manifest guidance for Claude, Codex, and other coding agents.
+  tasks:
+    - Create skills/dashboard-bootstrap/SKILL.md with skill description, manifest format reference, template catalog, icon naming conventions, capability keys per template, step-by-step PRD-to-manifest guidance, and limitations.
+    - Create skill examples showing input/output pairs (product requirements to dashboard.yaml).
+  exit_criteria:
+    - test -s skills/dashboard-bootstrap/SKILL.md exits 0.
+  out_of_scope:
+    - Deliverables belonging to other phases.
+
+- phase: 12
+  id: phase-012
+  name: Storybook and Component Documentation
+  dependency_layer: 5
+  risk_score: 1
+  rollback_checkpoint_required: true
+  deliverables:
+    - storybook-documentation
+  allowed_files:
+    - .storybook/
+    - packages/design-system/.storybook/
+    - packages/design-system/src/**/*.stories.tsx
+    - packages/templates/src/**/*.stories.tsx
+    - package.json
+    - pnpm-lock.yaml
+    - turbo.json
+  blocked_files:
+    - docs/DESIGN_SYSTEM.md
+  goal: Configure Storybook for design-system and template documentation with stories covering normal, loading, empty, error, and disabled states.
+  tasks:
+    - Add Storybook dev dependencies to root or design-system package.json.
+    - Configure Storybook at the design-system package level.
+    - Write stories for shell and page structure components.
+    - Write stories for data, content, and interaction components.
+    - Write stories for form, state, and icon components.
+    - Write stories for page templates with representative fixture data.
+    - Add storybook build script to turbo.json if needed.
+  exit_criteria:
+    - pnpm storybook:build exits 0.
+  out_of_scope:
+    - Component implementation changes.
+    - Deliverables belonging to other phases.
+
+- phase: 13
+  id: phase-013
+  name: Governance and Vocabulary Conformance
+  dependency_layer: 5
+  risk_score: 1
+  rollback_checkpoint_required: true
+  deliverables:
+    - governance-conformance
+  allowed_files:
+    - tests/conformance/
+    - eslint.config.*
+    - .eslintrc.*
+    - package.json
+    - pnpm-lock.yaml
+    - turbo.json
+  blocked_files: []
+  goal: Implement vocabulary conformance tests (template coverage, icon coverage, capability coverage) and ESLint governance rules preventing design-system violations.
+  tasks:
+    - Implement template coverage test (every TemplateName in schema has a corresponding export in templates).
+    - Implement icon coverage test (every IconName in schema is handled by the Icon component).
+    - Implement capability coverage test (template props accept schema-defined capability keys).
+    - Configure ESLint rules to prevent direct MUI imports outside design-system.
+    - Configure ESLint rules to prevent direct Lucide imports outside design-system.
+    - Configure ESLint rules to prevent additional icon libraries.
+    - Add lint dependencies to package.json if needed.
+  exit_criteria:
+    - pnpm test --filter ./tests/conformance exits 0.
+    - pnpm lint exits 0.
+  out_of_scope:
+    - Deliverables belonging to other phases.
+
+- phase: 14
+  id: phase-014
+  name: Visual Regression
+  dependency_layer: 5
+  risk_score: 1
+  rollback_checkpoint_required: true
+  deliverables:
+    - visual-regression
+  allowed_files:
+    - tests/visual-regression/
+    - playwright.config.ts
+    - package.json
+    - pnpm-lock.yaml
+    - turbo.json
+  blocked_files: []
+  goal: Configure Playwright visual regression tests against the reference app, capture baseline screenshots for all major page patterns.
+  tasks:
+    - Add Playwright dev dependencies to package.json.
+    - Create playwright.config.ts for visual regression testing.
+    - Create test specs that navigate to each reference app page and capture screenshots.
+    - Capture baseline screenshots for all major page patterns.
+    - Configure comparison thresholds.
+    - Add test:visual script to turbo.json if needed.
+  exit_criteria:
+    - pnpm test:visual exits 0.
+  out_of_scope:
+    - Deliverables belonging to other phases.
+
+- phase: 15
+  id: phase-015
+  name: Full Standalone E2E Acceptance
+  dependency_layer: 6
+  risk_score: 3
+  rollback_checkpoint_required: true
+  deliverables:
+    - e2e-acceptance
+  allowed_files:
+    - tests/e2e/
+    - package.json
+    - pnpm-lock.yaml
+    - turbo.json
+  blocked_files: []
+  goal: Validate Dashboard Bootstrap as a product — prove that a valid dashboard.yaml, processed by the standalone CLI, generates a fresh application that builds, runs, and respects ownership rules (scaffold protection, drift detection).
+  tasks:
+    - Create E2E test that creates a temporary empty directory.
+    - Run dashboard-bootstrap init in the temp directory.
+    - Replace/use a representative dashboard.yaml.
+    - Run dashboard-bootstrap validate and assert success.
+    - Run dashboard-bootstrap generate and assert success.
+    - Install and build the generated application.
+    - Verify routes, pages, and navigation are present in generated output.
+    - Modify a scaffold file, regenerate, and prove the modification survived.
+    - Modify a system-generated file, regenerate, and prove drift was detected and the file was restored.
+  exit_criteria:
+    - pnpm test:e2e exits 0.
+  out_of_scope:
+    - Keel plugin adapter (future phase).
+    - Deliverables belonging to other phases.

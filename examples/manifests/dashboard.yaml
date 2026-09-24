@@ -1,0 +1,59 @@
+version: 1
+application:
+  name: Reference Dashboard
+  description: A reference application demonstrating all Dashboard Bootstrap page patterns
+
+navigation:
+  - label: Overview
+    icon: home
+    route: /
+  - label: Users
+    icon: users
+    route: /users
+  - label: Messages
+    icon: mail
+    route: /messages
+  - label: Integrations
+    icon: package
+    route: /integrations
+  - label: Workflow Builder
+    icon: settings
+    route: /workflow-builder
+  - label: Settings
+    icon: settings
+    route: /settings
+  - label: Onboarding
+    icon: compass
+    route: /onboarding
+  - label: Getting Started
+    icon: help-circle
+    route: /getting-started
+
+pages:
+  overview:
+    route: /
+    template: dashboard
+  users:
+    route: /users
+    template: table
+  user-detail:
+    route: /users/:id
+    template: detail
+  settings:
+    route: /settings
+    template: settings
+  onboarding:
+    route: /onboarding
+    template: wizard
+  integrations:
+    route: /integrations
+    template: catalog
+  workflow-builder:
+    route: /workflow-builder
+    template: builder
+  messages:
+    route: /messages
+    template: split-view
+  getting-started:
+    route: /getting-started
+    template: empty-state

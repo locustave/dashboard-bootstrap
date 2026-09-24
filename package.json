@@ -1,0 +1,29 @@
+{
+  "name": "dashboard-bootstrap",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "packageManager": "pnpm@11.1.2",
+  "scripts": {
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "lint": "eslint .",
+    "clean": "turbo run clean",
+    "storybook:build": "turbo run storybook:build",
+    "test:visual": "playwright test --config playwright.config.ts",
+    "test:e2e": "pnpm --filter @dashboard-bootstrap/e2e-tests test",
+    "cli": "node --import tsx/esm packages/cli/dist/bin/dashboard-bootstrap.js"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.52.0",
+    "eslint": "^9.27.0",
+    "@eslint/js": "^9.27.0",
+    "typescript-eslint": "^8.33.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0",
+    "turbo": "^2.4.0"
+  }
+}

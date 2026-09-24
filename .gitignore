@@ -1,0 +1,48 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+*.tsbuildinfo
+
+# Turbo
+.turbo/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# Test output
+test-results/
+playwright-report/
+coverage/
+
+# Claude Code (local settings contain personal permissions/hooks)
+.claude/settings.local.json
+
+# Agent runtime state (session logs, audit trails, snapshots)
+.agent/
+.keel/
+.claude/
+.codex/ 
+keel
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Storybook build
+storybook-static/

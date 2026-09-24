@@ -1,0 +1,18 @@
+{
+  "name": "@dashboard-bootstrap/conformance-tests",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@dashboard-bootstrap/schema": "workspace:*",
+    "@dashboard-bootstrap/design-system": "workspace:*",
+    "@dashboard-bootstrap/templates": "workspace:*",
+    "vitest": "^3.2.0",
+    "typescript": "^5.7.0",
+    "react": "^19.0.0",
+    "@types/react": "^19.0.0"
+  }
+}

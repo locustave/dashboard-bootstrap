@@ -1,0 +1,27 @@
+{
+  "name": "@dashboard-bootstrap/cli",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "dashboard-bootstrap": "./dist/bin/dashboard-bootstrap.js"
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@dashboard-bootstrap/generator": "workspace:*",
+    "@dashboard-bootstrap/schema": "workspace:*",
+    "yaml": "^2.7.0",
+    "tsx": "^4.19.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.2.0"
+  }
+}

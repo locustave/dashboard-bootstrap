@@ -1,0 +1,16 @@
+{
+  "name": "@dashboard-bootstrap/e2e-tests",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@dashboard-bootstrap/cli": "workspace:*",
+    "@dashboard-bootstrap/schema": "workspace:*",
+    "vitest": "^3.2.0",
+    "typescript": "^5.7.0",
+    "@types/node": "^22.0.0"
+  }
+}
